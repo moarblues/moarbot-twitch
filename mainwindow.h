@@ -26,6 +26,7 @@ class mainWindow : public QMainWindow
     QTcpSocket *_tcpSocket;
     bool bHashtagRelease = true;
     bool bGreetingRelease = true;
+    bool bPollRelease = true;
     bool bDimaas63Release = true;
 
     QString _sPollName;

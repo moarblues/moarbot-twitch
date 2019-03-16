@@ -142,10 +142,11 @@ void mainWindow::readNamReply()
 
 void mainWindow::connectToServer()
 {
-
+//    clientid fr5hyjbajq4ltuhr45vttxca79aap7
 //    :moarbotx!moarbotx@moarbotx.tmi.twitch.tv
     _tcpSocket->connectToHost("irc.chat.twitch.tv",6667);
-    this->sendMessage(QString("PASS ").append(this->ui->le_oauth->text()).append("\r\n"));
+    this->sendMessage("PASS oauth:sh3lqhufr0ia8e0080iltvwadrvz89\r\n");
+//    this->sendMessage(QString("PASS ").append(this->ui->le_oauth->text()).append("\r\n"));
     this->sendMessage("NICK moarbotx\r\n");
 //    _tcpSocket->write("USER moarbotx\r\n");
 
@@ -174,6 +175,9 @@ void mainWindow::pingTimer()
 
 void mainWindow::startPoll(const QString &sPollData)
 {
+    _slPollData.clear();
+    _slPollResults.clear();
+    bPollRelease = false;
     QStringList slSeparators;
     slSeparators << "*" << "?" << "!";
     short currentSeparator = 0;
@@ -191,6 +195,8 @@ void mainWindow::startPoll(const QString &sPollData)
         sItem.append(sPollData.at(iitm));
     }
     slPollData << sItem;
+    if (slPollData.size()>12) {this->sendPrivmsg("Не более девяти вариантов ответа");bPollRelease = true;return;}
+    if (slPollData.size()<4) {this->sendPrivmsg("Неверная структура запроса голосования");bPollRelease = true;return;}
     QString sTemp;
     sTemp.append("Голосование \"").append(slPollData.at(2)).append("?\" запущено на ").append(slPollData.at(1))
             .append(" секунд. Варианты: ");
@@ -224,8 +230,7 @@ void mainWindow::completePoll()
     for (int iitm=0;iitm<lsResults.size();++iitm)
     {if(lsResults.at(iitm)>imax) {imax = lsResults.at(iitm);winCol=iitm;}}
     sResults.append("Победитель \"").append(_slPollData.at(winCol+1)).append("\" с результатом ").append(QString::number(imax));
-    _slPollData.clear();
-    _slPollResults.clear();
+    bPollRelease=true;
     this->sendPrivmsg(sResults);
 }
 
@@ -289,9 +294,10 @@ void mainWindow::parseRequestMessage(const QJsonObject &joData)
 {
 //    QJsonArray jsonArray = jsonObject.value("data").toArray();
     QVariantMap vmRoot = joData.toVariantMap();
-    QVariantList vlData = vmRoot.value("data").toList();
-    QVariant vData = vlData.at(0);
 //    qDebug() << "ROOT" << vmRoot;
+    QVariantList vlData = vmRoot.value("data").toList();
+    if (vlData.isEmpty()) {this->sendPrivmsg("Стримлер оффлаен");return;}
+    QVariant vData = vlData.at(0);
 //    qDebug() << "ROOTDATA" << vmRoot.value("data");
 //    qDebug() << "DATA" << vData.toMap().value("started_at").toString();
     QString sTemp = vData.toMap().value("started_at").toString();
@@ -319,8 +325,11 @@ void mainWindow::executeCommand(const QStringList &slMessageData)
     {this->sendPrivmsg("(oo)");}
     else if (QString::compare(sCommand,"!димас")==0)
     {this->sendPrivmsg("dimaas63 Димас, где чат?");}
-//    else if (QString::compare(sParsingLine,"!followage")==0)
-//    {_slNamRequest << "getstreamerid" << "getfollowerid" << "getfollowage";this->executeNamCommand(slMessageData);}
+    else if (QString::compare(sCommand,"!followage")==0)
+    {
+        this->sendPrivmsg("в разработке");
+//        _slNamRequest << "getstreamerid" << "getfollowerid" << "getfollowage";this->executeNamCommand(slMessageData);
+    }
     else if (QString::compare(sCommand,"!минигусь")==0)
     {this->sendPrivmsg("(*)>");}
     else if (QString::compare(sCommand,"!гусь")==0)
@@ -329,6 +338,7 @@ void mainWindow::executeCommand(const QStringList &slMessageData)
     {_slNamRequest << "getuptime";this->executeNamCommand(slMessageData);}
     else if (QString::compare(sCommand,"!poll")==0)
     {
+        if (!bPollRelease) {this->sendPrivmsg("Одно голосование уже запущено");return;}
         if(QString::compare(slMessageData.at(1),"moarblues")==0 ||
                 QString::compare(slMessageData.at(1),"multistrong999")==0 ||
                 QString::compare(slMessageData.at(1),"empire_metal")==0 ||
@@ -339,8 +349,12 @@ void mainWindow::executeCommand(const QStringList &slMessageData)
     }
     else if (QString::compare(sCommand,"!v")==0)
     {
+        if (bPollRelease) {this->sendPrivmsg("Никаких голосований сейчас не идёт");return;}
         QStringList slTemp = slMessageData.last().split(" ");
         if (slTemp.size()!=2) {this->sendPrivmsg("Ты втираешь мне какую-то дичь");return;}
+        if (!slTemp.at(1).at(0).isDigit()) {this->sendPrivmsg("Ты втираешь мне какую-то дичь");return;}
+        if (slTemp.at(1).toShort()>=_slPollData.size() || slTemp.at(1).toShort()<=0)
+        {this->sendPrivmsg("Столько вариантов нет");return;}
         _slPollResults.append(slMessageData.last().split(" ").at(1));
     }
 }
