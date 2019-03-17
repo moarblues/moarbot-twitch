@@ -13,6 +13,10 @@ mainWindow::mainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::mainWi
     _tPing = new QTimer(this);
     connect(_tPing,SIGNAL(timeout()),this,SLOT(pingTimer()));
     _tPing->start(300000);
+
+    _tStory = new QTimer(this);
+    connect(_tStory,SIGNAL(timeout()),this,SLOT(getStory()));
+    _tStory->start(300000);
 }
 
 mainWindow::~mainWindow()
@@ -142,9 +146,9 @@ void mainWindow::readNamReply()
 
 void mainWindow::connectToServer()
 {
+
 //    :moarbotx!moarbotx@moarbotx.tmi.twitch.tv
     _tcpSocket->connectToHost("irc.chat.twitch.tv",6667);
-
     this->sendMessage(QString("PASS ").append(this->ui->le_oauth->text()).append("\r\n"));
     this->sendMessage("NICK moarbotx\r\n");
 //    _tcpSocket->write("USER moarbotx\r\n");
@@ -231,6 +235,25 @@ void mainWindow::completePoll()
     sResults.append("Победитель \"").append(_slPollData.at(winCol+1)).append("\" с результатом ").append(QString::number(imax));
     bPollRelease=true;
     this->sendPrivmsg(sResults);
+}
+
+void mainWindow::getStory()
+{
+    QThread *tReadStory = new QThread(this);
+    files *fObj = new files();
+    fObj->moveToThread(tReadStory);
+    connect(fObj,SIGNAL(sendData(QString)),this,SLOT(postStory(QString)));
+    connect(tReadStory,SIGNAL(started()),fObj,SLOT(readStory()),Qt::QueuedConnection);
+    connect(this,SIGNAL(storyFinished()),tReadStory,SLOT(quit()));
+    connect(tReadStory,SIGNAL(finished()),fObj,SLOT(deleteLater()));
+    connect(fObj,SIGNAL(destroyed()),tReadStory,SLOT(deleteLater()));
+    tReadStory->start();
+}
+
+void mainWindow::postStory(const QString &sStory)
+{
+    emit this->storyFinished();
+    this->sendPrivmsg(QString(sStory).append(" KomodoHype"));
 }
 
 void mainWindow::sendMessage(QString sMsg)
@@ -356,6 +379,45 @@ void mainWindow::executeCommand(const QStringList &slMessageData)
         {this->sendPrivmsg("Столько вариантов нет");return;}
         _slPollResults.append(slMessageData.last().split(" ").at(1));
     }
+    else if (QString::compare(sCommand,"!startstories")==0)
+    {
+        if(QString::compare(slMessageData.at(1),"moarblues")==0 || QString::compare(slMessageData.at(1),"empire_metal")==0)
+        {
+            if (_tStory->isActive()) {this->sendPrivmsg("Истории уже работают");return;}
+            _tStory->start(300000);
+            this->getStory();
+        }
+        else {this->sendPrivmsg("Вы не наделены правом запускать истории KevinTurtle");return;}
+    }
+    else if (QString::compare(sCommand,"!stopstories")==0)
+    {
+        if(QString::compare(slMessageData.at(1),"moarblues")==0 || QString::compare(slMessageData.at(1),"empire_metal")==0)
+        {
+            if (!_tStory->isActive()) {this->sendPrivmsg("Истории и не работали");return;}
+            _tStory->stop();
+        }
+        else {this->sendPrivmsg("Вы не наделены правом останавливать истории KevinTurtle");return;}
+    }
+    else if (QString::compare(sCommand,"!8")==0)
+    {
+        QStringList sl8Data = slMessageData.last().split(" ");
+        if (sl8Data.size()!=2) {this->sendPrivmsg("Гадать надо на что-то (через пробел)");return;}
+
+        qsrand((uint)QTime::currentTime().msec());
+        short max=0;
+        QString sEnding = "";
+        if (QString::compare(sl8Data.at(1),"нос")==0) {max = 10;sEnding = "см WutFace";}
+        else if (QString::compare(sl8Data.at(1),"писюн")==0) {max = 30;sEnding = "см PogChamp";}
+        else if (QString::compare(sl8Data.at(1),"iq")==0) {max = 250;sEnding = " MingLee";}
+        else if (QString::compare(sl8Data.at(1),"сиськи")==0) {max = 250;sEnding = "см в обхвате HotPokket";}
+        if(max==0) {return;}
+        QString sKey = QString::number(qrand() % ((max + 1) - 1) + 1);
+
+        this->sendPrivmsg(QString().append("У ").append(slMessageData.at(1)).append(" ")
+                          .append(sl8Data.at(1)).append(" ").append(sKey).append(sEnding));
+    }
+    else if (QString::compare(sCommand,"!код")==0)
+    {this->sendPrivmsg("https://github.com/moarblues/moarbot-twitch");return;}
 }
 
 void mainWindow::executeNamCommand(const QStringList &slMessageData)

@@ -11,6 +11,9 @@
 #include <QJsonArray>
 #include <QTimer>
 #include <QDateTime>
+#include <QThread>
+
+#include "files.h"
 
 namespace Ui {
 class mainWindow;
@@ -21,6 +24,7 @@ class mainWindow : public QMainWindow
     Q_OBJECT
 
     QTimer *_tPing;
+    QTimer *_tStory;
 
     QString _sChannel;
     QTcpSocket *_tcpSocket;
@@ -57,6 +61,7 @@ public:
     ~mainWindow();
 
 signals:
+    void storyFinished();
 
 private slots:
     void readSocket();
@@ -68,6 +73,8 @@ private slots:
     void pingTimer();
     void startPoll(const QString &sPollData);
     void completePoll();
+    void getStory();
+    void postStory(const QString &sStory);
     void sendMessage(QString sMsg);
     void sendPrivmsg(QString sMsg);
     void sendNamRequest(const QString &sNamRequestUrl);

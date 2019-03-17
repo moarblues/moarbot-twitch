@@ -11,10 +11,14 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = moarbot-twitch
 TEMPLATE = app
 
+DESTDIR = bin
+
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    files.cpp
 
-HEADERS  += mainwindow.h
+HEADERS  += mainwindow.h \
+    files.h
 
 FORMS    += mainwindow.ui
