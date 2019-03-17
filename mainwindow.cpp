@@ -146,11 +146,11 @@ void mainWindow::readNamReply()
 
 void mainWindow::connectToServer()
 {
-//    clientid fr5hyjbajq4ltuhr45vttxca79aap7
+//
 //    :moarbotx!moarbotx@moarbotx.tmi.twitch.tv
     _tcpSocket->connectToHost("irc.chat.twitch.tv",6667);
-    this->sendMessage("PASS oauth:sh3lqhufr0ia8e0080iltvwadrvz89\r\n");
-//    this->sendMessage(QString("PASS ").append(this->ui->le_oauth->text()).append("\r\n"));
+
+    this->sendMessage(QString("PASS ").append(this->ui->le_oauth->text()).append("\r\n"));
     this->sendMessage("NICK moarbotx\r\n");
 //    _tcpSocket->write("USER moarbotx\r\n");
 
