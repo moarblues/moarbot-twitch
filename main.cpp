@@ -7,7 +7,5 @@ int main(int argc, char *argv[])
     mainWindow w;
     w.show();
 
-    qsrand((uint)QDateTime::currentMSecsSinceEpoch()/1000);
-
     return a.exec();
 }

@@ -7,6 +7,7 @@ files::files(QObject *parent) : QObject(parent)
 
 void files::readStory()
 {
+    qsrand((uint)QDateTime::currentMSecsSinceEpoch()/1000);
 //    qDebug() << QDateTime::currentMSecsSinceEpoch();
     QString sKey = QString::number(qrand() % ((331 + 1) - 1) + 1);
 
